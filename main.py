@@ -31,12 +31,31 @@ class TC():
             print("Uh oh, can't connect. Invalid dbname, user or password?")
     def check_MOI_view(self):
         self.connect_to_server('140.114.77.23', 'db1', 'db001', 'db1', whom='MOI')
+        old_rows = None
         while self.running:
             self.MOI_cursor.execute("""SELECT * FROM Accident_Process_Response;""")
             rows = self.MOI_cursor.fetchall()
-            
+
             # check if status is clear, remove tuple in table(accident_warning, broadcast)
             
+            if(old_rows is None):
+                hasChange = True
+            else:
+                hasChange = (rows != old_rows)
+
+            if(hasChange):
+                for row in rows:
+                    if(row[1] == 'clear'):
+                        hasChange = True
+                        self.TC_cursor.execute("""UPDATE accident_warning_event
+                                                  SET status_of_the_event='clear'
+                                                  WHERE accident_id = %s""", str(row[0]))
+
+                        self.TC_cursor.execute("""DELETE FROM warning_broadcast WHERE accident_id = %s""", str(row[0]))
+                
+                old_rows = rows    
+                self.TC_conn.commit();
+
             time.sleep(self.check_period)
             
     def check_sensor(self):
@@ -110,6 +129,7 @@ class TC():
         #print(self.TC_cursor.fetchall())
         
         self.TC_cursor.execute("""select * from accident_status_information;""")
+        self.TC_conn.commit();
         #print((self.TC_cursor.fetchall()))
         
     def get_input(self):
