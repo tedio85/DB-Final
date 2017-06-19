@@ -134,10 +134,15 @@ class TC():
         
     def get_input(self):
         while self.running:
-            k = input("Press Q to quit ")
+            k = input("Press Q to quit or enter command\n")
             if k == 'Q' or k == 'q':
                 self.running = False
-            #elif:
+            else:
+                self.TC_cursor.execute(k)
+                self.TC_conn.commit()
+                if(k.startswith('select')):
+                    rows = self.TC_cursor.fetchall()
+                    print(rows)
                 
     def run(self): 
         check_sensor_thread = threading.Thread(target=self.check_sensor, args=())
